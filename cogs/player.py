@@ -15,12 +15,14 @@ class Player:
     def __init__(self, player_id):
         self.id = player_id
         self.troves = 0
+        self.stamina = 0
         self.inventory: List[item.Item] = []  # Every item is stored individually
         self.effects: List[effect.Effect] = []
         self.units = UnitSystem.METRIC  # Default to Metric
         # Initialize body parts in a dictionary
         self.body = {'torso': Torso(
             mass=30,  # Average torso weight
+            muscle=mass/10  # Temporary muscle init start at 10% of mass for each body part
             base=None,  # Torso is the central base part of the body
             length=0.50,  # Average torso length from waist to shoulder
             width=0.40,  # Average shoulder-to-shoulder width
@@ -31,6 +33,7 @@ class Player:
         # Create the head
         self.body['head'] = Head(
             mass=5,  # Average head weight
+            muscle=mass/10  # Temporary muscle init start at 10% of mass for each body part
             base=self.body['torso'],  # The head attaches to the torso
             length=0.20,  # Average head length from chin to top
             width=0.15,  # Average width from ear to ear
@@ -40,6 +43,7 @@ class Player:
         # Create the neck
         self.body['neck'] = Neck(
             mass=1,  # Average neck weight
+            muscle=mass/10  # Temporary muscle init start at 10% of mass for each body part
             base=self.body['torso'],  # Neck attaches to the torso
             length=0.10,  # Average neck length
             width=0.12,  # Average neck width
@@ -49,6 +53,7 @@ class Player:
         # Create arms (left and right as mirrored limbs)
         self.body['left_arm'] = Limb(
             mass=3,  # Average arm weight
+            muscle=mass/10  # Temporary muscle init start at 10% of mass for each body part
             base=self.body['torso'],  # Arm attaches to torso at shoulder
             length=0.60,  # Average arm length from shoulder to wrist
             wide_w=0.12,  # Width at shoulder
@@ -60,6 +65,7 @@ class Player:
 
         self.body['right_arm'] = Limb(
             mass=3,
+            muscle=mass/10  # Temporary muscle init start at 10% of mass for each body part
             base=self.body['torso'],
             length=0.60,
             wide_w=0.12,
@@ -75,6 +81,7 @@ class Player:
         # Create legs (left and right as mirrored limbs)
         self.body['left_leg'] = Limb(
             mass=8,  # Average leg weight
+            muscle=mass/10  # Temporary muscle init start at 10% of mass for each body part
             base=self.body['torso'],  # Leg attaches to torso at hip
             length=0.90,  # Average leg length from hip to ankle
             wide_w=0.20,  # Width at hip
@@ -85,6 +92,7 @@ class Player:
 
         self.body['right_leg'] = Limb(
             mass=8,
+            muscle=mass/10  # Temporary muscle init start at 10% of mass for each body part
             base=self.body['torso'],
             length=0.90,
             wide_w=0.20,
@@ -97,18 +105,18 @@ class Player:
         self.body['left_leg'].mirror = self.body['right_leg']  # Set mirror for left_leg
 
         # Create additional accessories: eyes, nose, ears, and mouth
-        self.body['left_eye'] = Eye(mass=0.02, base=self.body['head'], width=0.025)
-        self.body['right_eye'] = Eye(mass=0.02, base=self.body['head'], width=0.025, mirror=self.body['left_eye'])
+        self.body['left_eye'] = Eye(mass=0.02, muscle=mass/10, base=self.body['head'], width=0.025)
+        self.body['right_eye'] = Eye(mass=0.02, muscle=mass/10, base=self.body['head'], width=0.025, mirror=self.body['left_eye'])
         self.body['left_eye'].mirror = self.body['right_eye']  # Set mirror for left_eye
 
-        self.body['nose'] = Nose(mass=0.05, base=self.body['head'])
+        self.body['nose'] = Nose(mass=0.05, muscle=mass/10, base=self.body['head'])
 
-        self.body['left_ear'] = Ear(mass=0.02, base=self.body['head'], length=0.06)
-        self.body['right_ear'] = Ear(mass=0.02, base=self.body['head'], length=0.06,
+        self.body['left_ear'] = Ear(mass=0.02, muscle=mass/10, base=self.body['head'], length=0.06)
+        self.body['right_ear'] = Ear(mass=0.02, muscle=mass/10, base=self.body['head'], length=0.06,
                                      mirror=self.body['left_ear'])
         self.body['left_ear'].mirror = self.body['right_ear']  # Set mirror for left_ear
 
-        self.body['maw'] = Maw(mass=0.1, base=self.body['head'], width=0.08, depth=0.02, teeth=0.01)
+        self.body['maw'] = Maw(mass=0.1, muscle=mass/10, base=self.body['head'], width=0.08, depth=0.02, teeth=0.01)
 
     def add_item(self, thing):
         """Adds a unique item to the inventory."""
@@ -160,9 +168,21 @@ class Player:
                     # Convert part.mass to kilograms if necessary
                     total_weight += part.mass
                 except ValueError as e:
-                    print(f"Error with part {part_name}: {e}")  # Print an error if conversion fails
+                    print(f"Error with mass for part {part_name}: {e}")  # Print an error if conversion fails
                     continue  # Skip this part if conversion fails
         return total_weight
+
+    def get_muscle(self):
+        total_muscle = 0  # Initialize total muscle in kilograms
+        for part_name, part in self.body.items():
+            if isinstance(part, Body):  # Check if the part is an instance of Body
+                try:
+                    # Convert part.muscle to kilograms if necessary
+                    total_weight += part.muscle
+                except ValueError as e:
+                    print(f"Error with muscle for part {part_name}: {e}")  # Print an error if conversion fails
+                    continue  # Skip this part if conversion fails
+        return total_muscle
 
     def scale_all_body_parts(self, factor):
         """
@@ -171,6 +191,14 @@ class Player:
         for part_name, part in self.body.items():
             if isinstance(part, Body):  # Ensure the part is of type Body or its subclasses
                 part.scale(factor)  # Call the scale method of the body part
+
+    def scale_muscle_for_all_body_parts(self, factor):
+        """
+        Scales the muscle of all body parts by the given factor.
+        """
+        for part_name, part in self.body.items():
+            if isinstance(part, Body):  # Ensure the part is of type Body or its subclasses
+                part.scale_muscle(factor)  # Call the scale muscle method of the body part
 
     def feed(self, amount, tier=0):
         mass_before = self.get_mass()
@@ -197,6 +225,21 @@ class Player:
             torso.stomach_content -= self.get_mass() / 51 / 12 * digestion_factor
             if torso.stomach_content < 0:
                 torso.stomach_content = 0
+
+    def rest(self):
+         if self.stamina > 4:
+            self.stamina = 4
+         if self.stamina < 0:
+            self.stamina = 0
+         if self.stamina < 4:
+            self.stamina += 1
+
+    def exercise(self, amount, tier=0):
+        muscle_before = self.get_muscle()
+        muscle_after = muscle_before + amount
+        factor = (muscle_after / muscle_before) ** (1 / 3)
+        # Filter for all torso instances in the player's body
+        self.scale_muscle_for_all_body_parts(factor)
 
     def can_eat(self, amount):
         torsos = [part for part in self.body.values() if isinstance(part, Torso)]
@@ -284,6 +327,39 @@ class Body:
                     else:
                         new_value = value * scale_factor  # Length scaling
                     setattr(self, attr, new_value)  # Set the new scaled value
+
+    def scale_muscle(self, scale_factor, _scaling_in_progress=None):
+        # If this is the first time calling scale, initialize the flag
+        if _scaling_in_progress is None:
+            _scaling_in_progress = set()
+
+        # Avoid recursion: Check if the object is already being scaled
+        if self in _scaling_in_progress:
+            return  # Avoid recursion
+
+        # Mark the object as being scaled
+        _scaling_in_progress.add(self)
+
+        scale_factor = float(scale_factor)
+
+        # Iterate through other attributes of the body part
+        for attr in dir(self):
+            if not attr.startswith("__") and hasattr(self, attr):
+                value = getattr(self, attr)  # Get current value before modifying
+
+                # If value is a number, scale it
+                if isinstance(value, (int, float)):
+                    if attr.endswith(("muscle")): # Search for muscle stat
+                        new_value = value * (scale_factor ** 3)
+                        muscle_delta = new_value-value
+                        setattr(self, attr, new_value) # Set the new scaled value of the muscle
+                        for mass_attr in dir(self):
+                            if not mass_attr.startswith("__") and hasattr(self, mass_attr):
+                                mass_value = getattr(self, mass_attr)
+                                if isinstance(mass_value, (int, float)):
+                                    if mass_attr.endswith(("mass")): # Search for mass stat
+                                        new_mass_value = mass_value + muscle_delta
+                                        setattr(self, mass_attr, new_mass_value) # Set the new scaled value of the mass adding the change in muscle
 
 
 class Torso(Body):
