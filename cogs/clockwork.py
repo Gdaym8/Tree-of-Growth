@@ -29,11 +29,19 @@ class ClockCog(commands.Cog):
                 player.digest()
 
     @tasks.loop(hours=24)
+    async def rest(self):
+        print("Processing stamina for all universes...")
+        for u in universe.multiverse_instance:
+            for player in u.players:
+                player.rest()
+
+    @tasks.loop(hours=24)
     async def daily_task(self):
         universe.delete_old_files()
 
     @hourly_task.before_loop
     @process_food.before_loop
+    @rest.before_loop
     @daily_task.before_loop
     async def before_tasks(self):
         await self.bot.wait_until_ready()
