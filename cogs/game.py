@@ -38,6 +38,24 @@ async def meal(ctx: Context):
         message = "You are too full to eat."
     await ctx.send(embed=discord.Embed(description=message, color=0xBEBEFE))
 
+async def exercise(ctx: Context):Add commentMore actions
+    grower: player.Player = util.get_player_from_ctx(ctx)
+    if grower is None:
+        embed = discord.Embed(description="Touch the tree first!", color=0xBEBEFE)
+        await ctx.send(embed=embed)
+        return
+    amount = grower.get_mass() / 200
+    weight_before = grower.get_mass()
+    muscle_before = grower.get_muscle()
+    units = grower.units
+    if stamina > 0
+        grower.exercise(amount)
+        delta_m = format_quantity((grower.get_muscle() - muscle_before) * ureg.m, units)
+        message = f"You gained {delta_m} more muscle."
+    else:
+        message = "You are too tired to exercise."
+    await ctx.send(embed=discord.Embed(description=message, color=0xBEBEFE))
+
 
 def get_meal_for_time(user_timezone: str) -> str:
     try:
